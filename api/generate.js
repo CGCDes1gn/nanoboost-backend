@@ -42,7 +42,8 @@ export default async function handler(req, res) {
           }
         ],
         generationConfig: {
-          responseModalities: ["TEXT", "IMAGE"]
+          responseModalities: ["IMAGE"],
+          temperature: 0.6
         }
       })
     });
