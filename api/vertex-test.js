@@ -3,7 +3,7 @@ export default async function handler(req, res) {
 
   const projectId = "project-9efb2e59-d82e-4d40-bfe";
 
-  const url = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/gemini-1.5-flash:generateContent`;
+  const url = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/gemini-2.0-flash-001:generateContent`;
 
   const response = await fetch(url, {
     method: "POST",
