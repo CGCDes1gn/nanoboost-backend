@@ -1,6 +1,7 @@
 export default async function handler(req, res) {
   return res.status(200).json({
     ok: true,
-    message: "API Vertex creada ✅"
+    step: "Listo para conectar Vertex",
+    falta: "Ahora necesitamos el PROJECT_ID de Google Cloud"
   });
 }
