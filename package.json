@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "google-auth-library": "latest"
+    "google-auth-library": "latest",
+    "@supabase/supabase-js": "^2.45.0"
   }
 }
