@@ -7,7 +7,7 @@ export default async function handler(req, res) {
     const PROJECT_ID = process.env.GCP_PROJECT_ID;
     const LOCATION = "us-central1";
 
-    const url = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/imagegeneration@006:predict`;
+    const url = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/imagen-3.0-generate-002:predict`;
 
     const response = await fetch(url, {
       method: "POST",
