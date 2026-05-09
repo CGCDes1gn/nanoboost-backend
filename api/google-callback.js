@@ -27,9 +27,7 @@ export default async function handler(req, res) {
     }
 
     // ✅ guardar en Supabase
-    console.log("SUPABASE_URL:", process.env.SUPABASE_URL);
-    console.log("TIENE_SERVICE_KEY:", !!process.env.SUPABASE_SERVICE_ROLE_KEY);
-    await fetch(`${process.env.SUPABASE_URL}/rest/v1/google_tokens`, {
+      await fetch(`${process.env.SUPABASE_URL}/rest/v1/google_tokens`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
