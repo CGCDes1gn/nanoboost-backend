@@ -1,3 +1,4 @@
+import { getUserToken } from "./google-token-store.js";
 import fetch from "node-fetch";
 
 async function getAccessTokenFromRefreshToken() {
@@ -7,7 +8,7 @@ async function getAccessTokenFromRefreshToken() {
     body: new URLSearchParams({
       client_id: process.env.GOOGLE_OAUTH_CLIENT_ID,
       client_secret: process.env.GOOGLE_OAUTH_CLIENT_SECRET,
-      refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
+      refresh_token: refreshToken,
       grant_type: "refresh_token"
     })
   });
@@ -29,7 +30,14 @@ export default async function handler(req, res) {
     const LOCATION = "us-central1";
 
     // 👇 CAMBIO CLAVE
-    const accessToken = await getAccessTokenFromRefreshToken();
+    const userId = "demo-user";
+const tokenData = getUserToken(userId);
+
+if (!tokenData?.refresh_token) {
+  throw new Error("Usuario no conectado a Google Cloud");
+}
+
+const accessToken = await getAccessTokenFromRefreshToken(tokenData.refresh_token);
 
     const url = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/imagen-3.0-generate-002:predict`;
 
