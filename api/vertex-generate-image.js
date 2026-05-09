@@ -1,7 +1,24 @@
-import { getUserToken } from "./google-token-store.js";
-import fetch from "node-fetch";
+async function getRefreshTokenFromSupabase() {
+  const res = await fetch(
+    `${process.env.SUPABASE_URL}/rest/v1/google_tokens?user_id=eq.demo-user&select=refresh_token`,
+    {
+      headers: {
+        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`
+      }
+    }
+  );
 
-async function getAccessTokenFromRefreshToken() {
+  const rows = await res.json();
+
+  if (!rows?.[0]?.refresh_token) {
+    throw new Error("No hay refresh_token guardado en Supabase");
+  }
+
+  return rows[0].refresh_token;
+}
+
+async function getAccessTokenFromRefreshToken(refreshToken) {
   const res = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -22,49 +39,34 @@ async function getAccessTokenFromRefreshToken() {
   return data.access_token;
 }
 
-// 👇 TU HANDLER
 export default async function handler(req, res) {
   try {
     const prompt = req.body?.prompt || "A cinematic photo of a futuristic city";
     const PROJECT_ID = process.env.GCP_PROJECT_ID;
     const LOCATION = "us-central1";
 
-    // 👇 CAMBIO CLAVE
-    const userId = "demo-user";
-const tokenData = getUserToken(userId);
-
-if (!tokenData?.refresh_token) {
-  throw new Error("Usuario no conectado a Google Cloud");
-}
-
-const accessToken = await getAccessTokenFromRefreshToken(tokenData.refresh_token);
+    const refreshToken = await getRefreshTokenFromSupabase();
+    const accessToken = await getAccessTokenFromRefreshToken(refreshToken);
 
     const url = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/imagen-3.0-generate-002:predict`;
 
     const response = await fetch(url, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${accessToken}`, // 👈 ya no usas GCP_ACCESS_TOKEN
+        Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        instances: [
-          {
-            prompt: prompt
-          }
-        ],
-        parameters: {
-          sampleCount: 1
-        }
+        instances: [{ prompt }],
+        parameters: { sampleCount: 1 }
       })
     });
 
     const data = await response.json();
-
-    res.status(200).json(data);
+    return res.status(200).json(data);
 
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
+    console.error("VERTEX ERROR:", error);
+    return res.status(500).json({ error: error.message });
   }
 }
