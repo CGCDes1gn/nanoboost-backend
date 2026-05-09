@@ -15,7 +15,6 @@ export default async function handler(req, res) {
 
   const data = await tokenRes.json();
 
-  console.log("OAUTH TOKENS:", data);
+console.log("OAUTH TOKENS:", data); // 👈 AGREGA ESTO
 
-  return res.send("Conectado correctamente. Puedes volver al plugin.");
-}
+return res.json(data); // 👈 para verlo en pantalla también
