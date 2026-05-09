@@ -1,11 +1,16 @@
 export default async function handler(req, res) {
   try {
     const code = req.query.code;
+    const userId = req.query.state;
 
     if (!code) {
-      return res.status(400).json({ error: "No llegó code desde Google" });
+       return res.status(400).json({ error: "No llegó code desde Google" });
     }
-
+    
+    if (!userId) {
+       return res.status(400).json({ error: "No llegó user_id desde Google" });
+    }
+    
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -36,7 +41,7 @@ export default async function handler(req, res) {
         "Prefer": "resolution=merge-duplicates"
       },
       body: JSON.stringify({
-        user_id: "demo-user",
+        user_id: userId,
         refresh_token: data.refresh_token,
         access_token: data.access_token
       })
