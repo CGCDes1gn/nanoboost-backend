@@ -22,7 +22,14 @@ export default async function handler(req, res) {
 
     console.log("OAUTH TOKENS:", data);
 
-    return res.status(200).json(data);
+    if (!data.refresh_token && !data.access_token) {
+  return res.status(500).json(data);
+}
+
+return res.send(`
+  <h2>Google Cloud conectado ✅</h2>
+  <p>Ya puedes volver a NanoBoost4k.</p>
+`);
   } catch (err) {
     console.error("CALLBACK ERROR:", err);
     return res.status(500).json({ error: err.message });
