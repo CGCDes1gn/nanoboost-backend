@@ -1,3 +1,4 @@
+import { saveUserToken } from "./google-token-store.js";
 export default async function handler(req, res) {
   try {
     const code = req.query.code;
@@ -21,6 +22,9 @@ export default async function handler(req, res) {
     const data = await tokenRes.json();
 
     console.log("OAUTH TOKENS:", data);
+    
+    const userId = "demo-user"; // luego esto será dinámico
+    saveUserToken(userId, data);
 
     if (!data.refresh_token && !data.access_token) {
   return res.status(500).json(data);
