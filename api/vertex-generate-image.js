@@ -58,7 +58,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         instances: [{ prompt }],
-        parameters: { sampleCount: 1 }
+        parameters: { sampleCount: 1, aspectRatio: req.body?.aspectRatio || "1:1" }
       })
     });
 
