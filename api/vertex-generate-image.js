@@ -1,6 +1,6 @@
-async function getRefreshTokenFromSupabase() {
+async function getRefreshTokenFromSupabase(user_id) {
   const res = await fetch(
-    `${process.env.SUPABASE_URL}/rest/v1/google_tokens?user_id=eq.demo-user&select=refresh_token`,
+    `${process.env.SUPABASE_URL}/rest/v1/google_tokens?user_id=eq.${user_id}&select=refresh_token`,
     {
       headers: {
         apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -12,7 +12,7 @@ async function getRefreshTokenFromSupabase() {
   const rows = await res.json();
 
   if (!rows?.[0]?.refresh_token) {
-    throw new Error("No hay refresh_token guardado en Supabase");
+    throw new Error("No hay refresh_token guardado en Supabase para user_id: " + user_id);
   }
 
   return rows[0].refresh_token;
@@ -41,11 +41,20 @@ async function getAccessTokenFromRefreshToken(refreshToken) {
 
 export default async function handler(req, res) {
   try {
-    const prompt = req.body?.prompt || "A cinematic photo of a futuristic city";
+    const { user_id, prompt, aspectRatio } = req.body || {};
+
+    if (!user_id) {
+      throw new Error("No llegó user_id desde el plugin");
+    }
+
+    if (!prompt) {
+      throw new Error("No llegó prompt desde el plugin");
+    }
+
     const PROJECT_ID = process.env.GCP_PROJECT_ID;
     const LOCATION = "us-central1";
 
-    const refreshToken = await getRefreshTokenFromSupabase();
+    const refreshToken = await getRefreshTokenFromSupabase(user_id);
     const accessToken = await getAccessTokenFromRefreshToken(refreshToken);
 
     const url = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/imagen-3.0-generate-002:predict`;
@@ -58,7 +67,10 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         instances: [{ prompt }],
-        parameters: { sampleCount: 1, aspectRatio: req.body?.aspectRatio || "1:1" }
+        parameters: {
+          sampleCount: 1,
+          aspectRatio: aspectRatio || "1:1"
+        }
       })
     });
 
