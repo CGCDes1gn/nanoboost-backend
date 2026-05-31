@@ -41,7 +41,7 @@ async function getAccessTokenFromRefreshToken(refreshToken) {
 
 export default async function handler(req, res) {
   try {
-    const { user_id, model, prompt, aspectRatio, imageSize } = req.body || {};
+    const { user_id, model, prompt, baseImagePart, aspectRatio, imageSize } = req.body || {};
 
     if (!user_id) throw new Error("No llegó user_id desde el plugin");
     if (!prompt) throw new Error("No llegó prompt desde el plugin");
@@ -60,6 +60,14 @@ export default async function handler(req, res) {
     const refreshToken = await getRefreshTokenFromSupabase(user_id);
     const accessToken = await getAccessTokenFromRefreshToken(refreshToken);
 
+    const parts = [];
+
+    if (baseImagePart) {
+      parts.push(baseImagePart);
+    }
+
+    parts.push({ text: prompt });
+
     const url = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/${finalModel}:generateContent`;
 
     const response = await fetch(url, {
@@ -72,7 +80,7 @@ export default async function handler(req, res) {
         contents: [
           {
             role: "user",
-            parts: [{ text: prompt }]
+            parts
           }
         ],
         generationConfig: {
