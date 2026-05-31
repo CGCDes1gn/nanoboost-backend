@@ -41,7 +41,15 @@ async function getAccessTokenFromRefreshToken(refreshToken) {
 
 export default async function handler(req, res) {
   try {
-    const { user_id, model, prompt, baseImagePart, aspectRatio, imageSize } = req.body || {};
+    const {
+      user_id,
+      model,
+      prompt,
+      baseImagePart,
+      referenceParts = [],
+      aspectRatio,
+      imageSize
+    } = req.body || {};
 
     if (!user_id) throw new Error("No llegó user_id desde el plugin");
     if (!prompt) throw new Error("No llegó prompt desde el plugin");
@@ -64,6 +72,10 @@ export default async function handler(req, res) {
 
     if (baseImagePart) {
       parts.push(baseImagePart);
+    }
+
+    for (const refPart of referenceParts) {
+      parts.push(refPart);
     }
 
     parts.push({ text: prompt });
