@@ -41,15 +41,18 @@ async function getAccessTokenFromRefreshToken(refreshToken) {
 
 export default async function handler(req, res) {
   try {
-    const { user_id, prompt, aspectRatio } = req.body || {};
+    const { user_id, model, prompt, aspectRatio, imageSize } = req.body || {};
 
-    if (!user_id) {
-      throw new Error("No llegó user_id desde el plugin");
-    }
+    if (!user_id) throw new Error("No llegó user_id desde el plugin");
+    if (!prompt) throw new Error("No llegó prompt desde el plugin");
 
-    if (!prompt) {
-      throw new Error("No llegó prompt desde el plugin");
-    }
+    const modelMap = {
+      "gemini-3-pro-image-preview": "gemini-3-pro-image",
+      "gemini-3.1-flash-image-preview": "gemini-3.1-flash-image",
+      "gemini-2.5-flash-image": "gemini-2.5-flash-image"
+    };
+
+    const finalModel = modelMap[model] || "gemini-3.1-flash-image";
 
     const PROJECT_ID = process.env.GCP_PROJECT_ID;
     const LOCATION = "us-central1";
@@ -57,7 +60,7 @@ export default async function handler(req, res) {
     const refreshToken = await getRefreshTokenFromSupabase(user_id);
     const accessToken = await getAccessTokenFromRefreshToken(refreshToken);
 
-    const url = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/imagen-3.0-generate-002:predict`;
+    const url = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/${finalModel}:generateContent`;
 
     const response = await fetch(url, {
       method: "POST",
@@ -66,10 +69,19 @@ export default async function handler(req, res) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        instances: [{ prompt }],
-        parameters: {
-          sampleCount: 1,
-          aspectRatio: aspectRatio || "1:1"
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: prompt }]
+          }
+        ],
+        generationConfig: {
+          responseModalities: ["IMAGE"],
+          temperature: 0.6,
+          imageConfig: {
+            imageSize: imageSize || "2K",
+            aspectRatio: aspectRatio || "1:1"
+          }
         }
       })
     });
