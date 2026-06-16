@@ -72,7 +72,7 @@ export default async function handler(req, res) {
     const finalModel = modelMap[model] || "gemini-3.1-flash-image";
 
     const PROJECT_ID = process.env.GCP_PROJECT_ID;
-    const LOCATION = process.env.GCP_LOCATION || "global";
+    const LOCATION = "global";
 
     if (!PROJECT_ID) {
       throw new Error("Falta configurar GCP_PROJECT_ID en Vercel");
