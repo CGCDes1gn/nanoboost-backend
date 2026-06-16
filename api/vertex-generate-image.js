@@ -40,6 +40,13 @@ async function getAccessTokenFromRefreshToken(refreshToken) {
 }
 
 export default async function handler(req, res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") return res.status(200).end();
+  if (req.method !== "POST") return res.status(405).json({ error: "Use POST" });
+
   try {
     const {
       user_id,
@@ -57,13 +64,19 @@ export default async function handler(req, res) {
     const modelMap = {
       "gemini-3-pro-image-preview": "gemini-3-pro-image",
       "gemini-3.1-flash-image-preview": "gemini-3.1-flash-image",
+      "gemini-3.1-flash-image": "gemini-3.1-flash-image",
+      "gemini-3-pro-image": "gemini-3-pro-image",
       "gemini-2.5-flash-image": "gemini-2.5-flash-image"
     };
 
     const finalModel = modelMap[model] || "gemini-3.1-flash-image";
 
     const PROJECT_ID = process.env.GCP_PROJECT_ID;
-    const LOCATION = "us-central1";
+    const LOCATION = process.env.GCP_LOCATION || "global";
+
+    if (!PROJECT_ID) {
+      throw new Error("Falta configurar GCP_PROJECT_ID en Vercel");
+    }
 
     const refreshToken = await getRefreshTokenFromSupabase(user_id);
     const accessToken = await getAccessTokenFromRefreshToken(refreshToken);
@@ -80,7 +93,21 @@ export default async function handler(req, res) {
 
     parts.push({ text: prompt });
 
-    const url = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/${finalModel}:generateContent`;
+    // Para LOCATION=global, Google recomienda usar aiplatform.googleapis.com
+    // con /locations/global en la ruta. Para regiones específicas se usa {region}-aiplatform.googleapis.com.
+    const endpoint = LOCATION === "global"
+      ? "https://aiplatform.googleapis.com"
+      : `https://${LOCATION}-aiplatform.googleapis.com`;
+
+    const url = `${endpoint}/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/${finalModel}:generateContent`;
+
+    console.log("VERTEX REQUEST", {
+      project: PROJECT_ID,
+      location: LOCATION,
+      model: finalModel,
+      imageSize: imageSize || "2K",
+      aspectRatio: aspectRatio || "1:1"
+    });
 
     const response = await fetch(url, {
       method: "POST",
@@ -107,6 +134,12 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
+
+    if (!response.ok) {
+      console.error("VERTEX API ERROR", data);
+      return res.status(response.status).json(data);
+    }
+
     return res.status(200).json(data);
 
   } catch (error) {
